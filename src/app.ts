@@ -7,7 +7,7 @@ import "./model/user.model";
 const app = Fastify({ logger: true });
 
 // ✅ CORRECT CORS FOR FASTIFY v5 + RENDER
-await app.register(cors, {
+app.register(cors, {
   origin: true, // allow all origins
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
