@@ -6,10 +6,12 @@ import "./model/user.model";
 
 const app = Fastify({ logger: true });
 
-app.register(cors, {
-  origin: "*", 
+// ✅ FIXED CORS CONFIG
+await app.register(cors, {
+  origin: true,                 // allow all origins
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: false
 });
 
 // ✅ Routes
@@ -17,16 +19,14 @@ app.register(UserRoute, { prefix: "/" });
 
 const start = async () => {
   try {
-    // ✅ DB connect
     await sequelize.authenticate();
     console.log("✅ Database connected");
 
-    // ✅ AUTO CREATE TABLE
     await sequelize.sync();
     console.log("✅ Tables synchronized");
 
-    await app.listen({ port: 3000, host: "0.0.0.0" });
-    console.log("🚀 Server running on http://localhost:3000");
+    await app.listen({ port: Number(process.env.PORT) || 3000, host: "0.0.0.0" });
+    console.log("🚀 Server running");
   } catch (error) {
     console.error("❌ Error starting server", error);
     process.exit(1);
@@ -34,3 +34,4 @@ const start = async () => {
 };
 
 start();
+
