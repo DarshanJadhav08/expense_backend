@@ -1,10 +1,18 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import UserRoute from "./routes/user.route";
 import sequelize from "./db/config";
 import "./model/user.model";
 
 const app = Fastify({ logger: true });
 
+app.register(cors, {
+  origin: "*", 
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+});
+
+// ✅ Routes
 app.register(UserRoute, { prefix: "/" });
 
 const start = async () => {
