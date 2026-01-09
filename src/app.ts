@@ -1,7 +1,7 @@
 import Fastify from "fastify";
-import UserRoute from "./src/routes/user.route";
-import sequelize from "./src/db/config";
-import "./src/model/user.model";
+import UserRoute from "./routes/user.route";
+import sequelize from "./db/config";
+import "./model/user.model";
 
 const app = Fastify({ logger: true });
 
