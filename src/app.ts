@@ -6,15 +6,14 @@ import "./model/user.model";
 
 const app = Fastify({ logger: true });
 
-// ✅ FIXED CORS CONFIG
+// ✅ CORRECT CORS FOR FASTIFY v5 + RENDER
 await app.register(cors, {
-  origin: true,                 // allow all origins
+  origin: true, // allow all origins
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: false
+  allowedHeaders: ["Content-Type", "Authorization"]
 });
 
-// ✅ Routes
+// routes
 app.register(UserRoute, { prefix: "/" });
 
 const start = async () => {
@@ -25,13 +24,16 @@ const start = async () => {
     await sequelize.sync();
     console.log("✅ Tables synchronized");
 
-    await app.listen({ port: Number(process.env.PORT) || 3000, host: "0.0.0.0" });
+    await app.listen({
+      port: Number(process.env.PORT) || 3000,
+      host: "0.0.0.0"
+    });
+
     console.log("🚀 Server running");
-  } catch (error) {
-    console.error("❌ Error starting server", error);
+  } catch (err) {
+    console.error("❌ Server error", err);
     process.exit(1);
   }
 };
 
 start();
-
