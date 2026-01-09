@@ -5,76 +5,86 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const User_service_1 = __importDefault(require("../service/User.service"));
 class UserController {
-    async create(req, rep) {
+    // 1️⃣ CREATE USER / ACCOUNT
+    async create(req, reply) {
         try {
             const data = req.body;
+            console.log("📥 CREATE BODY:", data); // 🔥 DEBUG
             const result = await User_service_1.default.create(data);
-            rep.status(201).send({
+            return reply.status(201).send({
                 success: true,
-                message: "Money added successfully",
-                result
+                message: "Account created successfully",
+                data: result
             });
         }
         catch (error) {
-            rep.status(404).send({
+            console.error("❌ CREATE ERROR:", error);
+            return reply.status(400).send({
                 success: false,
                 error: error.message
             });
         }
     }
-    async add_money(req, rep) {
+    // 2️⃣ ADD MONEY
+    async add_money(req, reply) {
         try {
             const { id } = req.params;
             const { add_amount } = req.body;
+            console.log("💰 ADD MONEY:", { id, add_amount });
             const result = await User_service_1.default.update(id, add_amount);
-            return rep.status(200).send({
+            return reply.status(200).send({
                 success: true,
                 message: "Money added successfully",
-                result,
+                data: result
             });
         }
         catch (error) {
-            return rep.status(400).send({
+            console.error("❌ ADD MONEY ERROR:", error);
+            return reply.status(400).send({
                 success: false,
-                error: error.message,
+                error: error.message
             });
         }
     }
-    // 3️⃣ ADD EXPENSE – खर्च add करणे
+    // 3️⃣ ADD EXPENSE
     async addExpense(req, reply) {
         try {
             const { id } = req.params;
             const { expense, category, description } = req.body;
+            console.log("🧾 ADD EXPENSE:", { id, expense });
             const result = await User_service_1.default.addExpense(id, expense, category, description);
-            return reply.send({
+            return reply.status(200).send({
                 success: true,
                 message: "Expense added successfully",
-                data: result,
+                data: result
             });
         }
         catch (error) {
+            console.error("❌ ADD EXPENSE ERROR:", error);
             return reply.status(400).send({
                 success: false,
-                message: error.message,
+                error: error.message
             });
         }
     }
+    // 4️⃣ DELETE USER
     async delete(req, reply) {
         try {
             const { id } = req.params;
             const result = await User_service_1.default.delete(id);
-            return reply.send({
+            return reply.status(200).send({
                 success: true,
                 message: "Record deleted successfully",
-                data: result,
+                data: result
             });
         }
         catch (error) {
+            console.error("❌ DELETE ERROR:", error);
             return reply.status(400).send({
                 success: false,
-                error: error.message,
+                error: error.message
             });
         }
     }
 }
-exports.default = new UserController;
+exports.default = new UserController();
