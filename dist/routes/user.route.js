@@ -3,11 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = UserRoute;
+exports.default = userRoutes;
 const user_controller_1 = __importDefault(require("../controller/user.controller"));
-async function UserRoute(app) {
-    app.post("/create", user_controller_1.default.create);
-    app.put("/add-money/:id", user_controller_1.default.add_money);
-    app.put("/add-expense/:id", user_controller_1.default.addExpense);
-    app.delete("/delete/:id", user_controller_1.default.delete);
+async function userRoutes(app) {
+    app.post("/user", user_controller_1.default.create);
+    app.get("/users", user_controller_1.default.getUsers);
+    // ✅ ONLY NAME BASED ADD MONEY
+    app.post("/add-money-by-name", user_controller_1.default.addMoneyByName);
+    app.post("/user/:id/expense", user_controller_1.default.addExpense);
+    app.get("/quick-stats", user_controller_1.default.quickStats);
+    app.delete("/user/:id", user_controller_1.default.delete);
 }

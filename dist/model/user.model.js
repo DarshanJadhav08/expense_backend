@@ -9,8 +9,8 @@ class Expense extends sequelize_1.Model {
 }
 Expense.init({
     id: {
-        type: sequelize_1.DataTypes.UUID,
-        defaultValue: sequelize_1.DataTypes.UUIDV4,
+        type: sequelize_1.DataTypes.INTEGER,
+        autoIncrement: true,
         primaryKey: true,
     },
     First_Name: {
@@ -39,6 +39,7 @@ Expense.init({
     Category: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
+        defaultValue: "N/A",
     },
     Description: {
         type: sequelize_1.DataTypes.STRING,

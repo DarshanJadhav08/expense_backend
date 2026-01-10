@@ -2,7 +2,7 @@ import { DataTypes, Model } from "sequelize";
 import sequelize from "../db/config";
 
 class Expense extends Model {
-  declare id: string;
+  declare id: number;
 
   declare First_Name: string;
   declare Last_Name: string;
@@ -22,8 +22,8 @@ class Expense extends Model {
 Expense.init(
   {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
     },
 
@@ -58,6 +58,7 @@ Expense.init(
     Category: {
       type: DataTypes.STRING,
       allowNull: false,
+      defaultValue: "N/A",
     },
 
     Description: {
