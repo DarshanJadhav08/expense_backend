@@ -5,6 +5,9 @@ import sequelize from "./db/config";
 
 // ⚠️ Model import is required so sequelize sync works
 import "./model/user.model";
+import "./model/auth-user.model"; // ✅ NEW
+import "./model/user.model";      // expense model (already)
+
 
 const app = Fastify({
   logger: true,
@@ -19,6 +22,7 @@ app.register(cors, {
 
 // ✅ Routes
 app.register(UserRoute, { prefix: "/" });
+
 
 // ✅ Server start
 const start = async () => {

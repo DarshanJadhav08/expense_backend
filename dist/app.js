@@ -9,6 +9,8 @@ const user_route_1 = __importDefault(require("./routes/user.route"));
 const config_1 = __importDefault(require("./db/config"));
 // ⚠️ Model import is required so sequelize sync works
 require("./model/user.model");
+require("./model/auth-user.model"); // ✅ NEW
+require("./model/user.model"); // expense model (already)
 const app = (0, fastify_1.default)({
     logger: true,
 });
