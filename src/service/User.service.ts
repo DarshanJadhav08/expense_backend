@@ -155,39 +155,57 @@ class UserService {
     };
   }
 
-  // ===============================
-  // ✅ ADD EXPENSE
-  // ===============================
-  async addExpense(
+ // ===============================
+// ✅ ADD EXPENSE (BUSINESS LOGIC)
+// ===============================
+async addExpense(
   id: string,
   amount: number,
   category: string,
   description?: string
 ) {
+  // 🔒 SAFETY CHECK
   if (amount <= 0) {
     throw new Error("Expense amount must be greater than 0");
   }
 
+  // 🔍 FIND USER RECORD
   const record: any = await UserRepo.findbyid(id);
   if (!record) {
     throw new Error("User record not found");
   }
 
-  const newSpent = Number(record.Spent_Amount) + amount;
-  const newRemaining = Number(record.Total_Amount) - newSpent;
+  const spentAmount = Number(record.Spent_Amount) || 0;
+  const totalAmount = Number(record.Total_Amount) || 0;
 
+  const newSpent = spentAmount + amount;
+  const newRemaining = totalAmount - newSpent;
+
+  // ❌ BALANCE CHECK
   if (newRemaining < 0) {
     throw new Error("Insufficient balance");
   }
 
-  return await UserRepo.update(id, {
+  // 📝 UPDATE EXPENSE
+  await UserRepo.update(id, {
     Spent_Amount: newSpent,
     Remaining_Amount: newRemaining,
     Category: category,
-    Description: description,
+    Description: description || null,
   });
-}
 
+  // 🔄 RETURN UPDATED RECORD
+  const updated: any = await UserRepo.findbyid(id);
+
+  return {
+    user_id: updated.id,
+    total_amount: updated.Total_Amount,
+    spent_amount: updated.Spent_Amount,
+    remaining_amount: updated.Remaining_Amount,
+    last_category: updated.Category,
+    last_description: updated.Description,
+  };
+}
 
   // ===============================
   // ✅ DELETE USER

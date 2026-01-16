@@ -66,37 +66,48 @@ class UserController {
   }
 
 async addExpense(req: FastifyRequest, reply: FastifyReply) {
-  try {
-    const { id } = req.params as any;
-    const { amount, category, description, date } = req.body as any;
+    try {
+      const { id } = req.params as { id: string };
+      const { amount, category, description } = req.body as any;
 
-    if (amount === undefined || Number(amount) <= 0) {
+      // 🔒 HARD VALIDATION & PARSING
+      const parsedAmount = Number(amount);
+
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        return reply.status(400).send({
+          success: false,
+          message: "Expense amount must be greater than 0",
+        });
+      }
+
+      if (!category || category.trim() === "") {
+        return reply.status(400).send({
+          success: false,
+          message: "Category is required",
+        });
+      }
+
+      // 🔁 SERVICE CALL
+      const result = await UserService.addExpense(
+        id,                // UUID only
+        parsedAmount,      // ALWAYS number
+        category,
+        description
+      );
+
+      return reply.status(200).send({
+        success: true,
+        message: "Expense added successfully",
+        data: result,
+      });
+
+    } catch (error: any) {
       return reply.status(400).send({
         success: false,
-        message: "Expense amount must be greater than 0",
+        message: error.message || "Failed to add expense",
       });
     }
-
-    const result = await UserService.addExpense(
-      id,
-      Number(amount),
-      category,
-      description
-    );
-
-    return reply.status(200).send({
-      success: true,
-      message: "Expense added successfully",
-      data: result,
-    });
-
-  } catch (error: any) {
-    return reply.status(400).send({
-      success: false,
-      message: error.message,
-    });
   }
-}
 
   async getUsers(req: FastifyRequest, reply: FastifyReply) {
     const users = await UserService.getAllUsers();
