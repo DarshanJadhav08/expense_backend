@@ -159,34 +159,35 @@ class UserService {
   // ✅ ADD EXPENSE
   // ===============================
   async addExpense(
-    id: string,
-    expense: number,
-    category: string,
-    description?: string
-  ) {
-    if (!expense || expense <= 0) {
-      throw new Error("Expense amount must be greater than 0");
-    }
-
-    const record: any = await UserRepo.findbyid(id);
-    if (!record) {
-      throw new Error("User record not found");
-    }
-
-    const newSpent = record.Spent_Amount + expense;
-    const newRemaining = record.Total_Amount - newSpent;
-
-    if (newRemaining < 0) {
-      throw new Error("Insufficient balance");
-    }
-
-    return await UserRepo.update(id, {
-      Spent_Amount: newSpent,
-      Remaining_Amount: newRemaining,
-      Category: category,
-      Description: description,
-    });
+  id: string,
+  amount: number,
+  category: string,
+  description?: string
+) {
+  if (amount <= 0) {
+    throw new Error("Expense amount must be greater than 0");
   }
+
+  const record: any = await UserRepo.findbyid(id);
+  if (!record) {
+    throw new Error("User record not found");
+  }
+
+  const newSpent = Number(record.Spent_Amount) + amount;
+  const newRemaining = Number(record.Total_Amount) - newSpent;
+
+  if (newRemaining < 0) {
+    throw new Error("Insufficient balance");
+  }
+
+  return await UserRepo.update(id, {
+    Spent_Amount: newSpent,
+    Remaining_Amount: newRemaining,
+    Category: category,
+    Description: description,
+  });
+}
+
 
   // ===============================
   // ✅ DELETE USER

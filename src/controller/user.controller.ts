@@ -65,19 +65,38 @@ class UserController {
     return reply.send({ success: true, data: result });
   }
 
-  async addExpense(req: FastifyRequest, reply: FastifyReply) {
+async addExpense(req: FastifyRequest, reply: FastifyReply) {
+  try {
     const { id } = req.params as any;
-    const { expense, category, description } = req.body as any;
+    const { amount, category, description, date } = req.body as any;
+
+    if (amount === undefined || Number(amount) <= 0) {
+      return reply.status(400).send({
+        success: false,
+        message: "Expense amount must be greater than 0",
+      });
+    }
 
     const result = await UserService.addExpense(
       id,
-      expense,
+      Number(amount),
       category,
       description
     );
 
-    return reply.send({ success: true, data: result });
+    return reply.status(200).send({
+      success: true,
+      message: "Expense added successfully",
+      data: result,
+    });
+
+  } catch (error: any) {
+    return reply.status(400).send({
+      success: false,
+      message: error.message,
+    });
   }
+}
 
   async getUsers(req: FastifyRequest, reply: FastifyReply) {
     const users = await UserService.getAllUsers();
