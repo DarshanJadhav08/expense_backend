@@ -6,34 +6,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
 const user_model_1 = __importDefault(require("../model/user.model"));
 class UserRepo {
-    async create(data) {
-        return await user_model_1.default.create(data);
+    create(data, options) {
+        return user_model_1.default.create(data, options);
     }
-    async findbyid(id) {
-        return await user_model_1.default.findByPk(id);
+    findbyid(id) {
+        return user_model_1.default.findByPk(id);
     }
-    async update(id, data) {
-        return await user_model_1.default.update(data, { where: { id } });
+    update(id, data) {
+        return user_model_1.default.update(data, { where: { id } });
     }
-    async delete(id) {
-        return await user_model_1.default.destroy({ where: { id } });
+    delete(id) {
+        return user_model_1.default.destroy({ where: { id } });
     }
-    // ✅ NEW: all users for dropdown
-    async getAllUsers() {
-        return await user_model_1.default.findAll({
+    getAllUsers() {
+        return user_model_1.default.findAll({
             attributes: ["id", "First_Name", "Last_Name"],
         });
     }
-    // ✅ NEW: find user by name
-    async findByName(firstName, lastName) {
-        return await user_model_1.default.findOne({
-            where: {
-                First_Name: firstName,
-                Last_Name: lastName,
-            },
+    findByName(first, last) {
+        return user_model_1.default.findOne({
+            where: { First_Name: first, Last_Name: last },
         });
     }
-    // ✅ NEW: quick stats
     async getQuickStats() {
         const totalUsers = await user_model_1.default.count();
         const totals = await user_model_1.default.findOne({

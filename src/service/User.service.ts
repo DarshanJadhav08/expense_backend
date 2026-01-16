@@ -1,236 +1,104 @@
 import bcrypt from "bcryptjs";
+import sequelize from "../db/config";
 import AuthUserRepo from "../repository/auth-user.repo";
 import UserRepo from "../repository/user.repo";
 
 class UserService {
 
-  // ===============================
-  // ✅ REGISTER USER
-  // auth_users + expense table
-  // ===============================
   async register(data: any) {
     const { first_name, last_name, password, Total_Amount } = data;
+    const t = await sequelize.transaction();
 
-    if (!first_name || !last_name || !password || !Total_Amount) {
-      throw new Error("All fields are required");
+    try {
+      const hashed = await bcrypt.hash(password, 10);
+
+      const authUser: any = await AuthUserRepo.create(
+        { first_name, last_name, password: hashed },
+        { transaction: t }
+      );
+
+      const today = new Date();
+
+      const expense: any = await UserRepo.create(
+        {
+          First_Name: first_name,
+          Last_Name: last_name,
+          Total_Amount,
+          Spent_Amount: 0,
+          Remaining_Amount: Total_Amount,
+          Category: "N/A",
+          Description: "Account Created",
+          Date: today.getDate().toString(),
+          Month: (today.getMonth() + 1).toString(),
+          Year: today.getFullYear().toString(),
+        },
+        { transaction: t }
+      );
+
+      await t.commit();
+      return { user_id: authUser.id, expense_id: expense.id };
+    } catch (err) {
+      await t.rollback();
+      throw err;
     }
-
-    // 🔐 hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 1️⃣ auth_users table entry
-    const authUser = await AuthUserRepo.create({
-      first_name,
-      last_name,
-      password: hashedPassword,
-    });
-
-    // 2️⃣ expense table entry
-    const today = new Date();
-
-    const expense = await UserRepo.create({
-      First_Name: first_name,
-      Last_Name: last_name,
-
-      Total_Amount,
-      Spent_Amount: 0,
-      Remaining_Amount: Total_Amount,
-
-      Category: "N/A",
-      Description: "Account Created",
-
-      Date: today.getDate().toString(),
-      Month: (today.getMonth() + 1).toString(),
-      Year: today.getFullYear().toString(),
-    });
-
-    return {
-      user_id: authUser.id,
-      expense_id: expense.id,
-    };
   }
 
-  // ===============================
-  // ✅ LOGIN USER (auth_users table)
-  // ===============================
-  async login(first_name: string, last_name: string, password: string) {
-    const user: any = await AuthUserRepo.findByName(first_name, last_name);
+  async login(first: string, last: string, password: string) {
+    const user: any = await AuthUserRepo.findByName(first, last);
+    if (!user) throw new Error("Invalid credentials");
 
-    if (!user) {
-      throw new Error("Invalid credentials");
-    }
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) throw new Error("Invalid credentials");
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      throw new Error("Invalid credentials");
-    }
-
-    return {
-      user_id: user.id,
-      first_name: user.first_name,
-      last_name: user.last_name,
-    };
+    return { user_id: user.id, first_name: user.first_name };
   }
 
-  // ===============================
-  // ✅ CREATE EXPENSE USER (OLD API)
-  // ===============================
   async create(data: any) {
-    if (!data.Total_Amount || data.Total_Amount <= 0) {
-      throw new Error("Total_Amount must be greater than 0");
-    }
-
     data.Spent_Amount = 0;
     data.Remaining_Amount = data.Total_Amount;
-
-    return await UserRepo.create(data);
+    return UserRepo.create(data);
   }
 
-  // ===============================
-  // 🔁 INTERNAL UPDATE (ADD MONEY)
-  // ===============================
-  async update(id: string, add_amount: number) {
-    if (!add_amount || add_amount <= 0) {
-      throw new Error("add_amount must be greater than 0");
-    }
-
-    const record: any = await UserRepo.findbyid(id);
-    if (!record) {
-      throw new Error("User record not found");
-    }
-
-    const previousTotal = record.Total_Amount;
-    const newTotal = record.Total_Amount + add_amount;
-    const newRemaining = newTotal - record.Spent_Amount;
-
-    await UserRepo.update(id, {
-      Total_Amount: newTotal,
-      Remaining_Amount: newRemaining,
-    });
-
-    const updated: any = await UserRepo.findbyid(id);
-
-    return {
-      previous_total: previousTotal,
-      added_amount: add_amount,
-      total_amount: updated.Total_Amount,
-      spent_amount: updated.Spent_Amount,
-      remaining_amount: updated.Remaining_Amount,
-    };
-  }
-
-  // ===============================
-  // ✅ ADD MONEY BY NAME
-  // ===============================
   async addMoneyByName(first: string, last: string, amount: number) {
     const user: any = await UserRepo.findByName(first, last);
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const newTotal = user.Total_Amount + amount;
+    const newRemain = newTotal - user.Spent_Amount;
 
-    return await this.update(user.id, amount);
+    await UserRepo.update(user.id, {
+      Total_Amount: newTotal,
+      Remaining_Amount: newRemain,
+    });
+
+    return { total_amount: newTotal, remaining_amount: newRemain };
   }
 
-  // ===============================
-  // ✅ GET ALL USERS (DROPDOWN)
-  // ===============================
-  async getAllUsers() {
-    return await UserRepo.getAllUsers();
+  async addExpense(id: number, expense: number, category: string, desc?: string) {
+    const user: any = await UserRepo.findbyid(id);
+    const spent = user.Spent_Amount + expense;
+    const remain = user.Total_Amount - spent;
+
+    if (remain < 0) throw new Error("Insufficient balance");
+
+    await UserRepo.update(id, {
+      Spent_Amount: spent,
+      Remaining_Amount: remain,
+      Category: category,
+      Description: desc,
+    });
+
+    return { spent_amount: spent, remaining_amount: remain };
   }
 
-  // ===============================
-  // ✅ QUICK STATS (DASHBOARD)
-  // ===============================
-  async quickStats() {
-    const stats = await UserRepo.getQuickStats();
-
-    return {
-      total_users: stats.totalUsers,
-      total_balance: stats.totalBalance,
-      todays_transactions: 0,
-      avg_expense:
-        stats.totalUsers > 0
-          ? Math.round(stats.totalSpent / stats.totalUsers)
-          : 0,
-    };
+  getAllUsers() {
+    return UserRepo.getAllUsers();
   }
 
- // ===============================
-// ✅ ADD EXPENSE (BUSINESS LOGIC)
-// ===============================
-async addExpense(
-  id: string,
-  amount: number,
-  category: string,
-  description?: string
-) {
-  // 🔒 SAFETY CHECK
-  if (amount <= 0) {
-    throw new Error("Expense amount must be greater than 0");
+  quickStats() {
+    return UserRepo.getQuickStats();
   }
 
-  // 🔍 FIND USER RECORD
-  const record: any = await UserRepo.findbyid(id);
-  if (!record) {
-    throw new Error("User record not found");
-  }
-
-  const spentAmount = Number(record.Spent_Amount) || 0;
-  const totalAmount = Number(record.Total_Amount) || 0;
-
-  const newSpent = spentAmount + amount;
-  const newRemaining = totalAmount - newSpent;
-
-  // ❌ BALANCE CHECK
-  if (newRemaining < 0) {
-    throw new Error("Insufficient balance");
-  }
-
-  // 📝 UPDATE EXPENSE
-  await UserRepo.update(id, {
-    Spent_Amount: newSpent,
-    Remaining_Amount: newRemaining,
-    Category: category,
-    Description: description || null,
-  });
-
-  // 🔄 RETURN UPDATED RECORD
-  const updated: any = await UserRepo.findbyid(id);
-
-  return {
-    user_id: updated.id,
-    total_amount: updated.Total_Amount,
-    spent_amount: updated.Spent_Amount,
-    remaining_amount: updated.Remaining_Amount,
-    last_category: updated.Category,
-    last_description: updated.Description,
-  };
-}
-
-  // ===============================
-  // ✅ DELETE USER
-  // ===============================
-  async delete(id: string) {
-    const record: any = await UserRepo.findbyid(id);
-    if (!record) {
-      throw new Error("User record not found");
-    }
-
-    await UserRepo.delete(id);
-
-    return {
-      deleted_user: {
-        id: record.id,
-        First_Name: record.First_Name,
-        Last_Name: record.Last_Name,
-      },
-      money_status: {
-        total_amount: record.Total_Amount,
-        spent_amount: record.Spent_Amount,
-        remaining_amount: record.Remaining_Amount,
-      },
-      deleted_at: new Date(),
-    };
+  delete(id: number) {
+    return UserRepo.delete(id);
   }
 }
 

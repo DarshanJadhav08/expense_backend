@@ -2,40 +2,34 @@ import { fn, col } from "sequelize";
 import User from "../model/user.model";
 
 class UserRepo {
-  async create(data: any) {
-    return await User.create(data);
+  create(data: any, options?: any) {
+    return User.create(data, options);
   }
 
-  async findbyid(id: string) {
-    return await User.findByPk(id);
+  findbyid(id: number | string) {
+    return User.findByPk(id);
   }
 
-  async update(id: string, data: any) {
-    return await User.update(data, { where: { id } });
+  update(id: number | string, data: any) {
+    return User.update(data, { where: { id } });
   }
 
-  async delete(id: string) {
-    return await User.destroy({ where: { id } });
+  delete(id: number | string) {
+    return User.destroy({ where: { id } });
   }
 
-  // ✅ NEW: all users for dropdown
-  async getAllUsers() {
-    return await User.findAll({
+  getAllUsers() {
+    return User.findAll({
       attributes: ["id", "First_Name", "Last_Name"],
     });
   }
 
-  // ✅ NEW: find user by name
-  async findByName(firstName: string, lastName: string) {
-    return await User.findOne({
-      where: {
-        First_Name: firstName,
-        Last_Name: lastName,
-      },
+  findByName(first: string, last: string) {
+    return User.findOne({
+      where: { First_Name: first, Last_Name: last },
     });
   }
 
-  // ✅ NEW: quick stats
   async getQuickStats() {
     const totalUsers = await User.count();
 

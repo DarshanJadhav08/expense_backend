@@ -1,12 +1,12 @@
 import AuthUser from "../model/auth-user.model";
 
 class AuthUserRepo {
-  async create(data: any) {
-    return await AuthUser.create(data);
+  create(data: any, options?: any) {
+    return AuthUser.create(data, options);
   }
 
-  async findByName(first: string, last: string) {
-    return await AuthUser.findOne({
+  findByName(first: string, last: string) {
+    return AuthUser.findOne({
       where: { first_name: first, last_name: last },
     });
   }

@@ -5,11 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const auth_user_model_1 = __importDefault(require("../model/auth-user.model"));
 class AuthUserRepo {
-    async create(data) {
-        return await auth_user_model_1.default.create(data);
+    create(data, options) {
+        return auth_user_model_1.default.create(data, options);
     }
-    async findByName(first, last) {
-        return await auth_user_model_1.default.findOne({
+    findByName(first, last) {
+        return auth_user_model_1.default.findOne({
             where: { first_name: first, last_name: last },
         });
     }

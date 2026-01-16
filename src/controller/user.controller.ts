@@ -3,127 +3,42 @@ import UserService from "../service/User.service";
 
 class UserController {
 
-  // ✅ REGISTER
-  async register(req: FastifyRequest, reply: FastifyReply) {
-    try {
-      const result = await UserService.register(req.body);
+  register = async (req: FastifyRequest, reply: FastifyReply) =>
+    reply.send(await UserService.register(req.body));
 
-      return reply.status(201).send({
-        success: true,
-        message: "User registered successfully",
-        data: result,
-      });
-    } catch (error: any) {
-      return reply.status(400).send({
-        success: false,
-        message: error.message,
-      });
-    }
-  }
+  login = async (req: FastifyRequest, reply: FastifyReply) =>
+    reply.send(await UserService.login(
+      (req.body as any).first_name,
+      (req.body as any).last_name,
+      (req.body as any).password
+    ));
 
-  // ✅ LOGIN
-  async login(req: FastifyRequest, reply: FastifyReply) {
-    try {
-      const { first_name, last_name, password } = req.body as any;
+  create = async (req: FastifyRequest, reply: FastifyReply) =>
+    reply.send(await UserService.create(req.body));
 
-      const result = await UserService.login(
-        first_name,
-        last_name,
-        password
-      );
+  addMoneyByName = async (req: FastifyRequest, reply: FastifyReply) =>
+    reply.send(await UserService.addMoneyByName(
+      (req.body as any).first_name,
+      (req.body as any).last_name,
+      (req.body as any).add_amount
+    ));
 
-      return reply.send({
-        success: true,
-        message: "Login successful",
-        data: result,
-      });
-    } catch (error: any) {
-      return reply.status(401).send({
-        success: false,
-        message: error.message,
-      });
-    }
-  }
+  addExpense = async (req: FastifyRequest, reply: FastifyReply) =>
+    reply.send(await UserService.addExpense(
+      Number((req.params as any).id),
+      (req.body as any).expense,
+      (req.body as any).category,
+      (req.body as any).description
+    ));
 
-  // 👇 बाकी existing APIs (unchanged)
-  async create(req: FastifyRequest, reply: FastifyReply) {
-    const result = await UserService.create(req.body);
-    return reply.status(201).send({
-      success: true,
-      message: "Account created successfully",
-      data: result,
-    });
-  }
+  getUsers = async (_: any, reply: FastifyReply) =>
+    reply.send(await UserService.getAllUsers());
 
-  async addMoneyByName(req: FastifyRequest, reply: FastifyReply) {
-    const { first_name, last_name, add_amount } = req.body as any;
-    const result = await UserService.addMoneyByName(
-      first_name,
-      last_name,
-      add_amount
-    );
-    return reply.send({ success: true, data: result });
-  }
+  quickStats = async (_: any, reply: FastifyReply) =>
+    reply.send(await UserService.quickStats());
 
-async addExpense(req: FastifyRequest, reply: FastifyReply) {
-    try {
-      const { id } = req.params as { id: string };
-      const { amount, category, description } = req.body as any;
-
-      // 🔒 HARD VALIDATION & PARSING
-      const parsedAmount = Number(amount);
-
-      if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        return reply.status(400).send({
-          success: false,
-          message: "Expense amount must be greater than 0",
-        });
-      }
-
-      if (!category || category.trim() === "") {
-        return reply.status(400).send({
-          success: false,
-          message: "Category is required",
-        });
-      }
-
-      // 🔁 SERVICE CALL
-      const result = await UserService.addExpense(
-        id,                // UUID only
-        parsedAmount,      // ALWAYS number
-        category,
-        description
-      );
-
-      return reply.status(200).send({
-        success: true,
-        message: "Expense added successfully",
-        data: result,
-      });
-
-    } catch (error: any) {
-      return reply.status(400).send({
-        success: false,
-        message: error.message || "Failed to add expense",
-      });
-    }
-  }
-
-  async getUsers(req: FastifyRequest, reply: FastifyReply) {
-    const users = await UserService.getAllUsers();
-    return reply.send({ success: true, data: users });
-  }
-
-  async quickStats(req: FastifyRequest, reply: FastifyReply) {
-    const stats = await UserService.quickStats();
-    return reply.send({ success: true, data: stats });
-  }
-
-  async delete(req: FastifyRequest, reply: FastifyReply) {
-    const { id } = req.params as any;
-    const result = await UserService.delete(id);
-    return reply.send({ success: true, data: result });
-  }
+  delete = async (req: any, reply: any) =>
+    reply.send(await UserService.delete(Number(req.params.id)));
 }
 
 export default new UserController();

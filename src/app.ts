@@ -1,53 +1,20 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import UserRoute from "./routes/user.route";
 import sequelize from "./db/config";
+import userRoutes from "./routes/user.route";
 
-// ⚠️ Model import is required so sequelize sync works
+import "./model/auth-user.model";
 import "./model/user.model";
-import "./model/auth-user.model"; // ✅ NEW
-import "./model/user.model";      // expense model (already)
 
+const app = Fastify({ logger: true });
 
-const app = Fastify({
-  logger: true,
-});
+app.register(cors, { origin: true });
+app.register(userRoutes);
 
-// ✅ CORS CONFIG (Fastify v5 + Render safe)
-app.register(cors, {
-  origin: true, // allow all origins (Render frontend)
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-});
-
-// ✅ Routes
-app.register(UserRoute, { prefix: "/" });
-
-
-// ✅ Server start
 const start = async () => {
-  try {
-    // DB connect
-    await sequelize.authenticate();
-    console.log("✅ Database connected");
-
-    // Auto create tables
-    await sequelize.sync({ alter: true }); 
-    console.log("✅ Tables synchronized");
-
-    // Listen
-    await app.listen({
-      port: Number(process.env.PORT) || 3000,
-      host: "0.0.0.0",
-    });
-
-    console.log(
-      `🚀 Server running on port ${process.env.PORT || 3000}`
-    );
-  } catch (err) {
-    console.error("❌ Server error", err);
-    process.exit(1);
-  }
+  await sequelize.authenticate();
+  await sequelize.sync({ alter: true });
+  await app.listen({ port: 3000, host: "0.0.0.0" });
 };
 
 start();

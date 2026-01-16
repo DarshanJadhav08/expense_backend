@@ -5,61 +5,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
 const config_1 = __importDefault(require("../db/config"));
-class Expense extends sequelize_1.Model {
+class User extends sequelize_1.Model {
 }
-Expense.init({
-    id: {
-        type: sequelize_1.DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-    },
-    First_Name: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    Last_Name: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    Total_Amount: {
-        type: sequelize_1.DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
-    },
-    Spent_Amount: {
-        type: sequelize_1.DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
-    },
-    Remaining_Amount: {
-        type: sequelize_1.DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
-    },
-    Category: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-        defaultValue: "N/A",
-    },
-    Description: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: true,
-    },
-    Date: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    Month: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    Year: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
+User.init({
+    id: { type: sequelize_1.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    First_Name: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    Last_Name: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    Total_Amount: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
+    Spent_Amount: { type: sequelize_1.DataTypes.INTEGER, defaultValue: 0 },
+    Remaining_Amount: { type: sequelize_1.DataTypes.INTEGER, defaultValue: 0 },
+    Category: { type: sequelize_1.DataTypes.STRING, defaultValue: "N/A" },
+    Description: { type: sequelize_1.DataTypes.STRING },
+    Date: { type: sequelize_1.DataTypes.STRING },
+    Month: { type: sequelize_1.DataTypes.STRING },
+    Year: { type: sequelize_1.DataTypes.STRING },
 }, {
     sequelize: config_1.default,
     tableName: "expense",
     timestamps: true,
 });
-exports.default = Expense;
+exports.default = User;

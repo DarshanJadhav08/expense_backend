@@ -8,23 +8,10 @@ const config_1 = __importDefault(require("../db/config"));
 class AuthUser extends sequelize_1.Model {
 }
 AuthUser.init({
-    id: {
-        type: sequelize_1.DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-    },
-    first_name: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    last_name: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    password: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
+    id: { type: sequelize_1.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    first_name: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    last_name: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    password: { type: sequelize_1.DataTypes.STRING, allowNull: false },
 }, {
     sequelize: config_1.default,
     tableName: "auth_users",
