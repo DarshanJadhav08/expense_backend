@@ -11,4 +11,6 @@ async function userRoutes(app) {
     app.post("/add-money", user_controller_1.default.addMoney);
     app.post("/user/:id/expense", user_controller_1.default.addExpense);
     app.get("/quick-stats", user_controller_1.default.quickStats);
+    app.get("/report/generate", user_controller_1.default.generateReport);
+    app.get("/report/download", user_controller_1.default.downloadReport);
 }

@@ -96,6 +96,25 @@ class UserService {
   async quickStats() {
     return await UserRepo.quickStats();
   }
+  
+async generateReport(first_name: string, last_name: string) {
+    const record: any = await UserRepo.findByName(first_name, last_name);
+
+    if (!record) {
+      throw new Error("User not found");
+    }
+
+    return {
+      first_name: record.First_Name,
+      last_name: record.Last_Name,
+      total_amount: record.Total_Amount,
+      spent_amount: record.Spent_Amount,
+      remaining_amount: record.Remaining_Amount,
+      last_category: record.Category || "N/A",
+      last_description: record.Description || "N/A",
+      generated_at: new Date().toISOString(),
+    };
+  }
 }
 
 export default new UserService();
