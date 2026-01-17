@@ -7,28 +7,26 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const auth_user_repo_1 = __importDefault(require("../repository/auth-user.repo"));
 const user_repo_1 = __importDefault(require("../repository/user.repo"));
 class UserService {
+    // ===============================
+    // REGISTER
+    // ===============================
     async register(data) {
         const { first_name, last_name, password, Total_Amount } = data;
-        // 🔒 VALIDATION (VERY IMPORTANT)
         if (!first_name || !last_name || !password) {
             throw new Error("first_name, last_name and password are required");
         }
-        if (password.length < 6) {
-            throw new Error("Password must be at least 6 characters");
-        }
-        if (Total_Amount !== undefined && Total_Amount < 0) {
-            throw new Error("Total_Amount must be >= 0");
+        const exists = await auth_user_repo_1.default.findByName(first_name, last_name);
+        if (exists) {
+            throw new Error("User already registered");
         }
         const hash = await bcryptjs_1.default.hash(password, 10);
-        // 1️⃣ AUTH TABLE
         const authUser = await auth_user_repo_1.default.create({
             first_name,
             last_name,
             password: hash,
         });
-        // 2️⃣ EXPENSE TABLE
         await user_repo_1.default.create({
-            id: authUser.id,
+            id: authUser.id, // SAME ID
             First_Name: first_name,
             Last_Name: last_name,
             Total_Amount: Total_Amount || 0,
@@ -40,39 +38,41 @@ class UserService {
             Month: new Date().toLocaleString("default", { month: "long" }),
             Year: new Date().getFullYear().toString(),
         });
-        return {
-            id: authUser.id,
-            first_name,
-            last_name,
-        };
+        return { id: authUser.id, first_name, last_name };
     }
     // ===============================
     // LOGIN
     // ===============================
     async login(data) {
         const { first_name, last_name, password } = data;
-        const user = await auth_user_repo_1.default.findByName(first_name, last_name);
-        if (!user)
+        const authUser = await auth_user_repo_1.default.findByName(first_name, last_name);
+        if (!authUser)
             throw new Error("User not found");
-        const ok = await bcryptjs_1.default.compare(password, user.password);
+        const ok = await bcryptjs_1.default.compare(password, authUser.password);
         if (!ok)
             throw new Error("Invalid password");
+        const expense = await user_repo_1.default.findById(authUser.id);
+        if (!expense)
+            throw new Error("Expense record not found");
         return {
-            id: user.id,
+            id: authUser.id,
             first_name,
             last_name,
+            Total_Amount: expense.Total_Amount,
+            Spent_Amount: expense.Spent_Amount,
+            Remaining_Amount: expense.Remaining_Amount,
         };
     }
     // ===============================
-    // ADD MONEY (USER WISE)
+    // ADD MONEY
     // ===============================
-    async addMoney(userId, amount, description) {
-        const record = await user_repo_1.default.findById(userId);
+    async addMoney(first, last, amount, description) {
+        const record = await user_repo_1.default.findByName(first, last);
         if (!record)
             throw new Error("Expense record not found");
         const total = record.Total_Amount + amount;
         const remaining = record.Remaining_Amount + amount;
-        await user_repo_1.default.update(userId, {
+        await user_repo_1.default.update(record.id, {
             Total_Amount: total,
             Remaining_Amount: remaining,
             Description: description,
@@ -80,17 +80,17 @@ class UserService {
         return { total, remaining };
     }
     // ===============================
-    // ADD EXPENSE (USER WISE)
+    // ADD EXPENSE
     // ===============================
-    async addExpense(userId, amount, category, description) {
-        const record = await user_repo_1.default.findById(userId);
+    async addExpense(id, amount, category, description) {
+        const record = await user_repo_1.default.findById(id);
         if (!record)
             throw new Error("Expense record not found");
         const spent = record.Spent_Amount + amount;
         const remaining = record.Total_Amount - spent;
         if (remaining < 0)
             throw new Error("Insufficient balance");
-        await user_repo_1.default.update(userId, {
+        await user_repo_1.default.update(id, {
             Spent_Amount: spent,
             Remaining_Amount: remaining,
             Category: category,
@@ -99,23 +99,23 @@ class UserService {
         return { spent, remaining };
     }
     // ===============================
-    // QUICK STATS (ONLY LOGIN USER)
+    // QUICK STATS (USER WISE)
     // ===============================
-    async quickStats(userId) {
-        const record = await user_repo_1.default.findById(userId);
+    async quickStats(user_id) {
+        const record = await user_repo_1.default.findById(user_id);
         if (!record)
-            throw new Error("Expense record not found");
+            throw new Error("User not found");
         return {
-            total: record.Total_Amount,
-            spent: record.Spent_Amount,
-            remaining: record.Remaining_Amount,
+            total_amount: record.Total_Amount,
+            spent_amount: record.Spent_Amount,
+            remaining_amount: record.Remaining_Amount,
         };
     }
     // ===============================
-    // GENERATE REPORT (USER ID BASED)
+    // GENERATE REPORT (SCREEN)
     // ===============================
-    async generateReport(userId) {
-        const record = await user_repo_1.default.findById(userId);
+    async generateReport(user_id) {
+        const record = await user_repo_1.default.findById(user_id);
         if (!record)
             throw new Error("User not found");
         return {
@@ -124,8 +124,8 @@ class UserService {
             total_amount: record.Total_Amount,
             spent_amount: record.Spent_Amount,
             remaining_amount: record.Remaining_Amount,
-            last_category: record.Category || "N/A",
-            last_description: record.Description || "N/A",
+            last_category: record.Category,
+            last_description: record.Description,
             generated_at: new Date().toISOString(),
         };
     }

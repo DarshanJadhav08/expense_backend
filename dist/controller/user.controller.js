@@ -9,30 +9,26 @@ class UserController {
     async register(req, reply) {
         try {
             const data = await User_service_1.default.register(req.body);
-            reply.send({ success: true, data });
+            return reply.send({ success: true, data });
         }
-        catch (error) {
-            reply.status(400).send({
-                success: false,
-                message: error.message,
-            });
+        catch (e) {
+            return reply.status(400).send({ success: false, message: e.message });
         }
     }
     async login(req, reply) {
-        const data = await User_service_1.default.login(req.body);
-        reply.send({ success: true, data });
+        try {
+            const data = await User_service_1.default.login(req.body);
+            return reply.send({ success: true, data });
+        }
+        catch (e) {
+            return reply.status(400).send({ success: false, message: e.message });
+        }
     }
-    // ===============================
-    // ADD MONEY (USER ID BASED)
-    // ===============================
     async addMoney(req, reply) {
-        const { user_id, amount, description } = req.body;
-        const data = await User_service_1.default.addMoney(Number(user_id), amount, description);
+        const { first_name, last_name, amount, description } = req.body;
+        const data = await User_service_1.default.addMoney(first_name, last_name, amount, description);
         reply.send({ success: true, data });
     }
-    // ===============================
-    // ADD EXPENSE
-    // ===============================
     async addExpense(req, reply) {
         const { id } = req.params;
         const { amount, category, description } = req.body;
@@ -40,7 +36,7 @@ class UserController {
         reply.send({ success: true, data });
     }
     // ===============================
-    // QUICK STATS (LOGIN USER ONLY)
+    // QUICK STATS
     // ===============================
     async quickStats(req, reply) {
         const { user_id } = req.query;
@@ -48,32 +44,25 @@ class UserController {
         reply.send({ success: true, data });
     }
     // ===============================
-    // GENERATE REPORT (SCREEN)
+    // GENERATE REPORT (JSON)
     // ===============================
     async generateReport(req, reply) {
-        try {
-            const { user_id } = req.query;
-            const data = await User_service_1.default.generateReport(Number(user_id));
-            return reply.send({ success: true, data });
-        }
-        catch (error) {
-            return reply.status(400).send({
-                success: false,
-                message: error.message,
-            });
-        }
+        const { user_id } = req.query;
+        const data = await User_service_1.default.generateReport(Number(user_id));
+        reply.send({ success: true, data });
     }
-    // ===============================
-    // DOWNLOAD REPORT (PDF)
-    // ===============================
-    async downloadReport(req, reply) {
-        try {
-            const { user_id } = req.query;
-            const data = await User_service_1.default.generateReport(Number(user_id));
+    downloadReport(req, reply) {
+        const { user_id } = req.query;
+        User_service_1.default.generateReport(Number(user_id))
+            .then((data) => {
             const doc = new pdfkit_1.default({ margin: 40 });
-            reply.header("Content-Type", "application/pdf");
-            reply.header("Content-Disposition", `attachment; filename=expense_report_${user_id}.pdf`);
-            doc.pipe(reply.raw);
+            // ✅ RAW RESPONSE ONLY
+            const res = reply.raw;
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader("Content-Disposition", "attachment; filename=expense_report.pdf");
+            // ✅ PIPE FIRST
+            doc.pipe(res);
+            // ✅ PDF CONTENT
             doc.fontSize(20).text("Expense Report", { align: "center" });
             doc.moveDown();
             doc.fontSize(12).text(`Name: ${data.first_name} ${data.last_name}`);
@@ -85,14 +74,17 @@ class UserController {
             doc.moveDown();
             doc.text(`Last Category    : ${data.last_category}`);
             doc.text(`Description      : ${data.last_description}`);
+            // ✅ END ONCE
             doc.end();
-        }
-        catch (error) {
-            reply.status(500).send({
-                success: false,
-                message: error.message,
-            });
-        }
+        })
+            .catch((err) => {
+            if (!reply.raw.headersSent) {
+                reply.status(500).send({
+                    success: false,
+                    message: err.message,
+                });
+            }
+        });
     }
 }
 exports.default = new UserController();

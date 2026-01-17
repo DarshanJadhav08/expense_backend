@@ -4,103 +4,76 @@ import PDFDocument from "pdfkit";
 
 class UserController {
 
-async register(req: FastifyRequest, reply: FastifyReply) {
-  try {
-    const data = await UserService.register(req.body);
-    reply.send({ success: true, data });
-  } catch (error: any) {
-    reply.status(400).send({
-      success: false,
-      message: error.message,
-    });
+  async register(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const data = await UserService.register(req.body);
+      return reply.send({ success: true, data });
+    } catch (e: any) {
+      return reply.status(400).send({ success: false, message: e.message });
+    }
   }
-}
-
 
   async login(req: FastifyRequest, reply: FastifyReply) {
-    const data = await UserService.login(req.body);
+    try {
+      const data = await UserService.login(req.body);
+      return reply.send({ success: true, data });
+    } catch (e: any) {
+      return reply.status(400).send({ success: false, message: e.message });
+    }
+  }
+
+  async addMoney(req: any, reply: any) {
+    const { first_name, last_name, amount, description } = req.body;
+    const data = await UserService.addMoney(first_name, last_name, amount, description);
+    reply.send({ success: true, data });
+  }
+
+  async addExpense(req: any, reply: any) {
+    const { id } = req.params;
+    const { amount, category, description } = req.body;
+    const data = await UserService.addExpense(Number(id), amount, category, description);
     reply.send({ success: true, data });
   }
 
   // ===============================
-  // ADD MONEY (USER ID BASED)
+  // QUICK STATS
   // ===============================
-  async addMoney(req: FastifyRequest, reply: FastifyReply) {
-    const { user_id, amount, description } = req.body as any;
-
-    const data = await UserService.addMoney(
-      Number(user_id),
-      amount,
-      description
-    );
-
-    reply.send({ success: true, data });
-  }
-
-  // ===============================
-  // ADD EXPENSE
-  // ===============================
-  async addExpense(req: FastifyRequest, reply: FastifyReply) {
-    const { id } = req.params as any;
-    const { amount, category, description } = req.body as any;
-
-    const data = await UserService.addExpense(
-      Number(id),
-      amount,
-      category,
-      description
-    );
-
-    reply.send({ success: true, data });
-  }
-
-  // ===============================
-  // QUICK STATS (LOGIN USER ONLY)
-  // ===============================
-  async quickStats(req: FastifyRequest, reply: FastifyReply) {
-    const { user_id } = req.query as any;
-
+  async quickStats(req: any, reply: any) {
+    const { user_id } = req.query;
     const data = await UserService.quickStats(Number(user_id));
     reply.send({ success: true, data });
   }
 
   // ===============================
-  // GENERATE REPORT (SCREEN)
+  // GENERATE REPORT (JSON)
   // ===============================
   async generateReport(req: any, reply: any) {
-    try {
-      const { user_id } = req.query;
-
-      const data = await UserService.generateReport(Number(user_id));
-
-      return reply.send({ success: true, data });
-    } catch (error: any) {
-      return reply.status(400).send({
-        success: false,
-        message: error.message,
-      });
-    }
+    const { user_id } = req.query;
+    const data = await UserService.generateReport(Number(user_id));
+    reply.send({ success: true, data });
   }
 
-  // ===============================
-  // DOWNLOAD REPORT (PDF)
-  // ===============================
-  async downloadReport(req: any, reply: any) {
-    try {
-      const { user_id } = req.query;
+downloadReport(req: any, reply: any) {
+  const { user_id } = req.query;
 
-      const data = await UserService.generateReport(Number(user_id));
+  UserService.generateReport(Number(user_id))
+    .then((data: any) => {
 
       const doc = new PDFDocument({ margin: 40 });
 
-      reply.header("Content-Type", "application/pdf");
-      reply.header(
+      // ✅ RAW RESPONSE ONLY
+      const res = reply.raw;
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
         "Content-Disposition",
-        `attachment; filename=expense_report_${user_id}.pdf`
+        "attachment; filename=expense_report.pdf"
       );
 
-      doc.pipe(reply.raw);
+      // ✅ PIPE FIRST
+      doc.pipe(res);
 
+      // ✅ PDF CONTENT
       doc.fontSize(20).text("Expense Report", { align: "center" });
       doc.moveDown();
 
@@ -116,14 +89,18 @@ async register(req: FastifyRequest, reply: FastifyReply) {
       doc.text(`Last Category    : ${data.last_category}`);
       doc.text(`Description      : ${data.last_description}`);
 
+      // ✅ END ONCE
       doc.end();
-    } catch (error: any) {
-      reply.status(500).send({
-        success: false,
-        message: error.message,
-      });
-    }
-  }
+    })
+    .catch((err: any) => {
+      if (!reply.raw.headersSent) {
+        reply.status(500).send({
+          success: false,
+          message: err.message,
+        });
+      }
+    });
+}
 }
 
 export default new UserController();

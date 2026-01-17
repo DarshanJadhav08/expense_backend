@@ -1,6 +1,7 @@
 import UserController from "../controller/user.controller";
 
 export default async function userRoutes(app: any) {
+
   app.post("/register", UserController.register);
   app.post("/login", UserController.login);
 
@@ -9,6 +10,7 @@ export default async function userRoutes(app: any) {
 
   app.get("/quick-stats", UserController.quickStats);
 
-  app.get("/report/generate", UserController.generateReport);
+  // 📄 REPORTS
+  app.get("/report", UserController.generateReport);
   app.get("/report/download", UserController.downloadReport);
 }

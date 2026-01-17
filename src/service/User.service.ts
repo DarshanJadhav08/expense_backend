@@ -4,52 +4,45 @@ import UserRepo from "../repository/user.repo";
 
 class UserService {
 
+  // ===============================
+  // REGISTER
+  // ===============================
   async register(data: any) {
-  const { first_name, last_name, password, Total_Amount } = data;
+    const { first_name, last_name, password, Total_Amount } = data;
 
-  // 🔒 VALIDATION (VERY IMPORTANT)
-  if (!first_name || !last_name || !password) {
-    throw new Error("first_name, last_name and password are required");
+    if (!first_name || !last_name || !password) {
+      throw new Error("first_name, last_name and password are required");
+    }
+
+    const exists = await AuthUserRepo.findByName(first_name, last_name);
+    if (exists) {
+      throw new Error("User already registered");
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    const authUser = await AuthUserRepo.create({
+      first_name,
+      last_name,
+      password: hash,
+    });
+
+    await UserRepo.create({
+      id: authUser.id, // SAME ID
+      First_Name: first_name,
+      Last_Name: last_name,
+      Total_Amount: Total_Amount || 0,
+      Spent_Amount: 0,
+      Remaining_Amount: Total_Amount || 0,
+      Category: "N/A",
+      Description: "Account created",
+      Date: new Date().toISOString().split("T")[0],
+      Month: new Date().toLocaleString("default", { month: "long" }),
+      Year: new Date().getFullYear().toString(),
+    });
+
+    return { id: authUser.id, first_name, last_name };
   }
-
-  if (password.length < 6) {
-    throw new Error("Password must be at least 6 characters");
-  }
-
-  if (Total_Amount !== undefined && Total_Amount < 0) {
-    throw new Error("Total_Amount must be >= 0");
-  }
-
-  const hash = await bcrypt.hash(password, 10);
-
-  // 1️⃣ AUTH TABLE
-  const authUser = await AuthUserRepo.create({
-    first_name,
-    last_name,
-    password: hash,
-  });
-
-  // 2️⃣ EXPENSE TABLE
-  await UserRepo.create({
-    id: authUser.id,
-    First_Name: first_name,
-    Last_Name: last_name,
-    Total_Amount: Total_Amount || 0,
-    Spent_Amount: 0,
-    Remaining_Amount: Total_Amount || 0,
-    Category: "N/A",
-    Description: "Account created",
-    Date: new Date().toISOString().split("T")[0],
-    Month: new Date().toLocaleString("default", { month: "long" }),
-    Year: new Date().getFullYear().toString(),
-  });
-
-  return {
-    id: authUser.id,
-    first_name,
-    last_name,
-  };
-}
 
   // ===============================
   // LOGIN
@@ -57,30 +50,36 @@ class UserService {
   async login(data: any) {
     const { first_name, last_name, password } = data;
 
-    const user: any = await AuthUserRepo.findByName(first_name, last_name);
-    if (!user) throw new Error("User not found");
+    const authUser: any = await AuthUserRepo.findByName(first_name, last_name);
+    if (!authUser) throw new Error("User not found");
 
-    const ok = await bcrypt.compare(password, user.password);
+    const ok = await bcrypt.compare(password, authUser.password);
     if (!ok) throw new Error("Invalid password");
 
+    const expense: any = await UserRepo.findById(authUser.id);
+    if (!expense) throw new Error("Expense record not found");
+
     return {
-      id: user.id,
+      id: authUser.id,
       first_name,
       last_name,
+      Total_Amount: expense.Total_Amount,
+      Spent_Amount: expense.Spent_Amount,
+      Remaining_Amount: expense.Remaining_Amount,
     };
   }
 
   // ===============================
-  // ADD MONEY (USER WISE)
+  // ADD MONEY
   // ===============================
-  async addMoney(userId: number, amount: number, description: string) {
-    const record: any = await UserRepo.findById(userId);
+  async addMoney(first: string, last: string, amount: number, description: string) {
+    const record: any = await UserRepo.findByName(first, last);
     if (!record) throw new Error("Expense record not found");
 
     const total = record.Total_Amount + amount;
     const remaining = record.Remaining_Amount + amount;
 
-    await UserRepo.update(userId, {
+    await UserRepo.update(record.id, {
       Total_Amount: total,
       Remaining_Amount: remaining,
       Description: description,
@@ -90,15 +89,10 @@ class UserService {
   }
 
   // ===============================
-  // ADD EXPENSE (USER WISE)
+  // ADD EXPENSE
   // ===============================
-  async addExpense(
-    userId: number,
-    amount: number,
-    category: string,
-    description: string
-  ) {
-    const record: any = await UserRepo.findById(userId);
+  async addExpense(id: number, amount: number, category: string, description: string) {
+    const record: any = await UserRepo.findById(id);
     if (!record) throw new Error("Expense record not found");
 
     const spent = record.Spent_Amount + amount;
@@ -106,7 +100,7 @@ class UserService {
 
     if (remaining < 0) throw new Error("Insufficient balance");
 
-    await UserRepo.update(userId, {
+    await UserRepo.update(id, {
       Spent_Amount: spent,
       Remaining_Amount: remaining,
       Category: category,
@@ -117,24 +111,24 @@ class UserService {
   }
 
   // ===============================
-  // QUICK STATS (ONLY LOGIN USER)
+  // QUICK STATS (USER WISE)
   // ===============================
-  async quickStats(userId: number) {
-    const record: any = await UserRepo.findById(userId);
-    if (!record) throw new Error("Expense record not found");
+  async quickStats(user_id: number) {
+    const record: any = await UserRepo.findById(user_id);
+    if (!record) throw new Error("User not found");
 
     return {
-      total: record.Total_Amount,
-      spent: record.Spent_Amount,
-      remaining: record.Remaining_Amount,
+      total_amount: record.Total_Amount,
+      spent_amount: record.Spent_Amount,
+      remaining_amount: record.Remaining_Amount,
     };
   }
 
   // ===============================
-  // GENERATE REPORT (USER ID BASED)
+  // GENERATE REPORT (SCREEN)
   // ===============================
-  async generateReport(userId: number) {
-    const record: any = await UserRepo.findById(userId);
+  async generateReport(user_id: number) {
+    const record: any = await UserRepo.findById(user_id);
     if (!record) throw new Error("User not found");
 
     return {
@@ -143,8 +137,8 @@ class UserService {
       total_amount: record.Total_Amount,
       spent_amount: record.Spent_Amount,
       remaining_amount: record.Remaining_Amount,
-      last_category: record.Category || "N/A",
-      last_description: record.Description || "N/A",
+      last_category: record.Category,
+      last_description: record.Description,
       generated_at: new Date().toISOString(),
     };
   }
