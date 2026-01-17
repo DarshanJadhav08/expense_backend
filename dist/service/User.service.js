@@ -7,6 +7,9 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const auth_user_repo_1 = __importDefault(require("../repository/auth-user.repo"));
 const user_repo_1 = __importDefault(require("../repository/user.repo"));
 class UserService {
+    // ===============================
+    // REGISTER
+    // ===============================
     async register(data) {
         const { first_name, last_name, password, Total_Amount } = data;
         const hash = await bcryptjs_1.default.hash(password, 10);
@@ -16,8 +19,9 @@ class UserService {
             last_name,
             password: hash,
         });
-        // 2️⃣ EXPENSE TABLE (DASHBOARD BASE)
+        // 2️⃣ EXPENSE TABLE (same id logic)
         await user_repo_1.default.create({
+            id: authUser.id, // 🔥 IMPORTANT
             First_Name: first_name,
             Last_Name: last_name,
             Total_Amount: Total_Amount || 0,
@@ -30,11 +34,14 @@ class UserService {
             Year: new Date().getFullYear().toString(),
         });
         return {
-            user_id: authUser.id,
+            id: authUser.id,
             first_name,
             last_name,
         };
     }
+    // ===============================
+    // LOGIN
+    // ===============================
     async login(data) {
         const { first_name, last_name, password } = data;
         const user = await auth_user_repo_1.default.findByName(first_name, last_name);
@@ -44,33 +51,39 @@ class UserService {
         if (!ok)
             throw new Error("Invalid password");
         return {
-            user_id: user.id,
+            id: user.id,
             first_name,
             last_name,
         };
     }
-    async addMoney(first, last, amount, description) {
-        const record = await user_repo_1.default.findByName(first, last);
+    // ===============================
+    // ADD MONEY (USER WISE)
+    // ===============================
+    async addMoney(userId, amount, description) {
+        const record = await user_repo_1.default.findById(userId);
         if (!record)
             throw new Error("Expense record not found");
         const total = record.Total_Amount + amount;
         const remaining = record.Remaining_Amount + amount;
-        await user_repo_1.default.update(record.id, {
+        await user_repo_1.default.update(userId, {
             Total_Amount: total,
             Remaining_Amount: remaining,
             Description: description,
         });
         return { total, remaining };
     }
-    async addExpense(id, amount, category, description) {
-        const record = await user_repo_1.default.findById(id);
+    // ===============================
+    // ADD EXPENSE (USER WISE)
+    // ===============================
+    async addExpense(userId, amount, category, description) {
+        const record = await user_repo_1.default.findById(userId);
         if (!record)
             throw new Error("Expense record not found");
         const spent = record.Spent_Amount + amount;
         const remaining = record.Total_Amount - spent;
         if (remaining < 0)
             throw new Error("Insufficient balance");
-        await user_repo_1.default.update(id, {
+        await user_repo_1.default.update(userId, {
             Spent_Amount: spent,
             Remaining_Amount: remaining,
             Category: category,
@@ -78,14 +91,26 @@ class UserService {
         });
         return { spent, remaining };
     }
-    async quickStats() {
-        return await user_repo_1.default.quickStats();
+    // ===============================
+    // QUICK STATS (ONLY LOGIN USER)
+    // ===============================
+    async quickStats(userId) {
+        const record = await user_repo_1.default.findById(userId);
+        if (!record)
+            throw new Error("Expense record not found");
+        return {
+            total: record.Total_Amount,
+            spent: record.Spent_Amount,
+            remaining: record.Remaining_Amount,
+        };
     }
-    async generateReport(first_name, last_name) {
-        const record = await user_repo_1.default.findByName(first_name, last_name);
-        if (!record) {
+    // ===============================
+    // GENERATE REPORT (USER ID BASED)
+    // ===============================
+    async generateReport(userId) {
+        const record = await user_repo_1.default.findById(userId);
+        if (!record)
             throw new Error("User not found");
-        }
         return {
             first_name: record.First_Name,
             last_name: record.Last_Name,

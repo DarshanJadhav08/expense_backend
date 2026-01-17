@@ -14,17 +14,24 @@ class UserController {
     reply.send({ success: true, data });
   }
 
+  // ===============================
+  // ADD MONEY (USER ID BASED)
+  // ===============================
   async addMoney(req: FastifyRequest, reply: FastifyReply) {
-    const { first_name, last_name, amount, description } = req.body as any;
+    const { user_id, amount, description } = req.body as any;
+
     const data = await UserService.addMoney(
-      first_name,
-      last_name,
+      Number(user_id),
       amount,
       description
     );
+
     reply.send({ success: true, data });
   }
 
+  // ===============================
+  // ADD EXPENSE
+  // ===============================
   async addExpense(req: FastifyRequest, reply: FastifyReply) {
     const { id } = req.params as any;
     const { amount, category, description } = req.body as any;
@@ -35,26 +42,30 @@ class UserController {
       category,
       description
     );
+
     reply.send({ success: true, data });
   }
 
-  async quickStats(_: FastifyRequest, reply: FastifyReply) {
-    const data = await UserService.quickStats();
+  // ===============================
+  // QUICK STATS (LOGIN USER ONLY)
+  // ===============================
+  async quickStats(req: FastifyRequest, reply: FastifyReply) {
+    const { user_id } = req.query as any;
+
+    const data = await UserService.quickStats(Number(user_id));
     reply.send({ success: true, data });
   }
-   // ===============================
-  // ✅ GENERATE REPORT (SCREEN)
+
+  // ===============================
+  // GENERATE REPORT (SCREEN)
   // ===============================
   async generateReport(req: any, reply: any) {
     try {
-      const { first_name, last_name } = req.query;
+      const { user_id } = req.query;
 
-      const data = await UserService.generateReport(first_name, last_name);
+      const data = await UserService.generateReport(Number(user_id));
 
-      return reply.send({
-        success: true,
-        data,
-      });
+      return reply.send({ success: true, data });
     } catch (error: any) {
       return reply.status(400).send({
         success: false,
@@ -64,20 +75,20 @@ class UserController {
   }
 
   // ===============================
-  // ✅ DOWNLOAD REPORT (PDF)
+  // DOWNLOAD REPORT (PDF)
   // ===============================
   async downloadReport(req: any, reply: any) {
     try {
-      const { first_name, last_name } = req.query;
+      const { user_id } = req.query;
 
-      const data = await UserService.generateReport(first_name, last_name);
+      const data = await UserService.generateReport(Number(user_id));
 
       const doc = new PDFDocument({ margin: 40 });
 
       reply.header("Content-Type", "application/pdf");
       reply.header(
         "Content-Disposition",
-        `attachment; filename=${first_name}_expense_report.pdf`
+        `attachment; filename=expense_report_${user_id}.pdf`
       );
 
       doc.pipe(reply.raw);
@@ -106,6 +117,5 @@ class UserController {
     }
   }
 }
-
 
 export default new UserController();
