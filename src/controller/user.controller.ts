@@ -4,10 +4,18 @@ import PDFDocument from "pdfkit";
 
 class UserController {
 
-  async register(req: FastifyRequest, reply: FastifyReply) {
+async register(req: FastifyRequest, reply: FastifyReply) {
+  try {
     const data = await UserService.register(req.body);
     reply.send({ success: true, data });
+  } catch (error: any) {
+    reply.status(400).send({
+      success: false,
+      message: error.message,
+    });
   }
+}
+
 
   async login(req: FastifyRequest, reply: FastifyReply) {
     const data = await UserService.login(req.body);

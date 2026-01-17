@@ -7,8 +7,16 @@ const User_service_1 = __importDefault(require("../service/User.service"));
 const pdfkit_1 = __importDefault(require("pdfkit"));
 class UserController {
     async register(req, reply) {
-        const data = await User_service_1.default.register(req.body);
-        reply.send({ success: true, data });
+        try {
+            const data = await User_service_1.default.register(req.body);
+            reply.send({ success: true, data });
+        }
+        catch (error) {
+            reply.status(400).send({
+                success: false,
+                message: error.message,
+            });
+        }
     }
     async login(req, reply) {
         const data = await User_service_1.default.login(req.body);

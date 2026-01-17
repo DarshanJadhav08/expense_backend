@@ -7,11 +7,18 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const auth_user_repo_1 = __importDefault(require("../repository/auth-user.repo"));
 const user_repo_1 = __importDefault(require("../repository/user.repo"));
 class UserService {
-    // ===============================
-    // REGISTER
-    // ===============================
     async register(data) {
         const { first_name, last_name, password, Total_Amount } = data;
+        // 🔒 VALIDATION (VERY IMPORTANT)
+        if (!first_name || !last_name || !password) {
+            throw new Error("first_name, last_name and password are required");
+        }
+        if (password.length < 6) {
+            throw new Error("Password must be at least 6 characters");
+        }
+        if (Total_Amount !== undefined && Total_Amount < 0) {
+            throw new Error("Total_Amount must be >= 0");
+        }
         const hash = await bcryptjs_1.default.hash(password, 10);
         // 1️⃣ AUTH TABLE
         const authUser = await auth_user_repo_1.default.create({
@@ -19,9 +26,9 @@ class UserService {
             last_name,
             password: hash,
         });
-        // 2️⃣ EXPENSE TABLE (same id logic)
+        // 2️⃣ EXPENSE TABLE
         await user_repo_1.default.create({
-            id: authUser.id, // 🔥 IMPORTANT
+            id: authUser.id,
             First_Name: first_name,
             Last_Name: last_name,
             Total_Amount: Total_Amount || 0,

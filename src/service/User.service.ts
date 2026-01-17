@@ -4,42 +4,52 @@ import UserRepo from "../repository/user.repo";
 
 class UserService {
 
-  // ===============================
-  // REGISTER
-  // ===============================
   async register(data: any) {
-    const { first_name, last_name, password, Total_Amount } = data;
+  const { first_name, last_name, password, Total_Amount } = data;
 
-    const hash = await bcrypt.hash(password, 10);
-
-    // 1️⃣ AUTH TABLE
-    const authUser = await AuthUserRepo.create({
-      first_name,
-      last_name,
-      password: hash,
-    });
-
-    // 2️⃣ EXPENSE TABLE (same id logic)
-    await UserRepo.create({
-      id: authUser.id, // 🔥 IMPORTANT
-      First_Name: first_name,
-      Last_Name: last_name,
-      Total_Amount: Total_Amount || 0,
-      Spent_Amount: 0,
-      Remaining_Amount: Total_Amount || 0,
-      Category: "N/A",
-      Description: "Account created",
-      Date: new Date().toISOString().split("T")[0],
-      Month: new Date().toLocaleString("default", { month: "long" }),
-      Year: new Date().getFullYear().toString(),
-    });
-
-    return {
-      id: authUser.id,
-      first_name,
-      last_name,
-    };
+  // 🔒 VALIDATION (VERY IMPORTANT)
+  if (!first_name || !last_name || !password) {
+    throw new Error("first_name, last_name and password are required");
   }
+
+  if (password.length < 6) {
+    throw new Error("Password must be at least 6 characters");
+  }
+
+  if (Total_Amount !== undefined && Total_Amount < 0) {
+    throw new Error("Total_Amount must be >= 0");
+  }
+
+  const hash = await bcrypt.hash(password, 10);
+
+  // 1️⃣ AUTH TABLE
+  const authUser = await AuthUserRepo.create({
+    first_name,
+    last_name,
+    password: hash,
+  });
+
+  // 2️⃣ EXPENSE TABLE
+  await UserRepo.create({
+    id: authUser.id,
+    First_Name: first_name,
+    Last_Name: last_name,
+    Total_Amount: Total_Amount || 0,
+    Spent_Amount: 0,
+    Remaining_Amount: Total_Amount || 0,
+    Category: "N/A",
+    Description: "Account created",
+    Date: new Date().toISOString().split("T")[0],
+    Month: new Date().toLocaleString("default", { month: "long" }),
+    Year: new Date().getFullYear().toString(),
+  });
+
+  return {
+    id: authUser.id,
+    first_name,
+    last_name,
+  };
+}
 
   // ===============================
   // LOGIN
