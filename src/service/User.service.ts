@@ -1,5 +1,4 @@
 import bcrypt from "bcryptjs";
-import sequelize from "../db/config";
 import AuthUserRepo from "../repository/auth-user.repo";
 import UserRepo from "../repository/user.repo";
 
@@ -7,98 +6,95 @@ class UserService {
 
   async register(data: any) {
     const { first_name, last_name, password, Total_Amount } = data;
-    const t = await sequelize.transaction();
 
-    try {
-      const hashed = await bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(password, 10);
 
-      const authUser: any = await AuthUserRepo.create(
-        { first_name, last_name, password: hashed },
-        { transaction: t }
-      );
-
-      const today = new Date();
-
-      const expense: any = await UserRepo.create(
-        {
-          First_Name: first_name,
-          Last_Name: last_name,
-          Total_Amount,
-          Spent_Amount: 0,
-          Remaining_Amount: Total_Amount,
-          Category: "N/A",
-          Description: "Account Created",
-          Date: today.getDate().toString(),
-          Month: (today.getMonth() + 1).toString(),
-          Year: today.getFullYear().toString(),
-        },
-        { transaction: t }
-      );
-
-      await t.commit();
-      return { user_id: authUser.id, expense_id: expense.id };
-    } catch (err) {
-      await t.rollback();
-      throw err;
-    }
-  }
-
-  async login(first: string, last: string, password: string) {
-    const user: any = await AuthUserRepo.findByName(first, last);
-    if (!user) throw new Error("Invalid credentials");
-
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) throw new Error("Invalid credentials");
-
-    return { user_id: user.id, first_name: user.first_name };
-  }
-
-  async create(data: any) {
-    data.Spent_Amount = 0;
-    data.Remaining_Amount = data.Total_Amount;
-    return UserRepo.create(data);
-  }
-
-  async addMoneyByName(first: string, last: string, amount: number) {
-    const user: any = await UserRepo.findByName(first, last);
-    const newTotal = user.Total_Amount + amount;
-    const newRemain = newTotal - user.Spent_Amount;
-
-    await UserRepo.update(user.id, {
-      Total_Amount: newTotal,
-      Remaining_Amount: newRemain,
+    // 1️⃣ AUTH TABLE
+    const authUser = await AuthUserRepo.create({
+      first_name,
+      last_name,
+      password: hash,
     });
 
-    return { total_amount: newTotal, remaining_amount: newRemain };
+    // 2️⃣ EXPENSE TABLE (DASHBOARD BASE)
+    await UserRepo.create({
+      First_Name: first_name,
+      Last_Name: last_name,
+      Total_Amount: Total_Amount || 0,
+      Spent_Amount: 0,
+      Remaining_Amount: Total_Amount || 0,
+      Category: "N/A",
+      Description: "Account created",
+      Date: new Date().toISOString().split("T")[0],
+      Month: new Date().toLocaleString("default", { month: "long" }),
+      Year: new Date().getFullYear().toString(),
+    });
+
+    return {
+      user_id: authUser.id,
+      first_name,
+      last_name,
+    };
   }
 
-  async addExpense(id: number, expense: number, category: string, desc?: string) {
-    const user: any = await UserRepo.findbyid(id);
-    const spent = user.Spent_Amount + expense;
-    const remain = user.Total_Amount - spent;
+  async login(data: any) {
+    const { first_name, last_name, password } = data;
 
-    if (remain < 0) throw new Error("Insufficient balance");
+    const user: any = await AuthUserRepo.findByName(first_name, last_name);
+    if (!user) throw new Error("User not found");
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) throw new Error("Invalid password");
+
+    return {
+      user_id: user.id,
+      first_name,
+      last_name,
+    };
+  }
+
+  async addMoney(first: string, last: string, amount: number, description: string) {
+    const record: any = await UserRepo.findByName(first, last);
+    if (!record) throw new Error("Expense record not found");
+
+    const total = record.Total_Amount + amount;
+    const remaining = record.Remaining_Amount + amount;
+
+    await UserRepo.update(record.id, {
+      Total_Amount: total,
+      Remaining_Amount: remaining,
+      Description: description,
+    });
+
+    return { total, remaining };
+  }
+
+  async addExpense(
+    id: number,
+    amount: number,
+    category: string,
+    description: string
+  ) {
+    const record: any = await UserRepo.findById(id);
+    if (!record) throw new Error("Expense record not found");
+
+    const spent = record.Spent_Amount + amount;
+    const remaining = record.Total_Amount - spent;
+
+    if (remaining < 0) throw new Error("Insufficient balance");
 
     await UserRepo.update(id, {
       Spent_Amount: spent,
-      Remaining_Amount: remain,
+      Remaining_Amount: remaining,
       Category: category,
-      Description: desc,
+      Description: description,
     });
 
-    return { spent_amount: spent, remaining_amount: remain };
+    return { spent, remaining };
   }
 
-  getAllUsers() {
-    return UserRepo.getAllUsers();
-  }
-
-  quickStats() {
-    return UserRepo.getQuickStats();
-  }
-
-  delete(id: number) {
-    return UserRepo.delete(id);
+  async quickStats() {
+    return await UserRepo.quickStats();
   }
 }
 

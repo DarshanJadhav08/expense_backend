@@ -1,50 +1,43 @@
+import UserExpense from "../model/user.model";
 import { fn, col } from "sequelize";
-import User from "../model/user.model";
 
 class UserRepo {
-  create(data: any, options?: any) {
-    return User.create(data, options);
+  create(data: any) {
+    return UserExpense.create(data);
   }
 
-  findbyid(id: number | string) {
-    return User.findByPk(id);
-  }
-
-  update(id: number | string, data: any) {
-    return User.update(data, { where: { id } });
-  }
-
-  delete(id: number | string) {
-    return User.destroy({ where: { id } });
-  }
-
-  getAllUsers() {
-    return User.findAll({
-      attributes: ["id", "First_Name", "Last_Name"],
-    });
+  findById(id: number) {
+    return UserExpense.findByPk(id);
   }
 
   findByName(first: string, last: string) {
-    return User.findOne({
+    return UserExpense.findOne({
       where: { First_Name: first, Last_Name: last },
     });
   }
 
-  async getQuickStats() {
-    const totalUsers = await User.count();
+  update(id: number, data: any) {
+    return UserExpense.update(data, { where: { id } });
+  }
 
-    const totals: any = await User.findOne({
+  getAll() {
+    return UserExpense.findAll();
+  }
+
+  async quickStats() {
+    const totals: any = await UserExpense.findOne({
       attributes: [
-        [fn("SUM", col("Total_Amount")), "total_balance"],
-        [fn("SUM", col("Spent_Amount")), "total_spent"],
+        [fn("SUM", col("Total_Amount")), "total"],
+        [fn("SUM", col("Spent_Amount")), "spent"],
+        [fn("SUM", col("Remaining_Amount")), "remaining"],
       ],
       raw: true,
     });
 
     return {
-      totalUsers,
-      totalBalance: Number(totals?.total_balance || 0),
-      totalSpent: Number(totals?.total_spent || 0),
+      total: Number(totals.total || 0),
+      spent: Number(totals.spent || 0),
+      remaining: Number(totals.remaining || 0),
     };
   }
 }

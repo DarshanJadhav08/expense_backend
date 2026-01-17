@@ -3,42 +3,44 @@ import UserService from "../service/User.service";
 
 class UserController {
 
-  register = async (req: FastifyRequest, reply: FastifyReply) =>
-    reply.send(await UserService.register(req.body));
+  async register(req: FastifyRequest, reply: FastifyReply) {
+    const data = await UserService.register(req.body);
+    reply.send({ success: true, data });
+  }
 
-  login = async (req: FastifyRequest, reply: FastifyReply) =>
-    reply.send(await UserService.login(
-      (req.body as any).first_name,
-      (req.body as any).last_name,
-      (req.body as any).password
-    ));
+  async login(req: FastifyRequest, reply: FastifyReply) {
+    const data = await UserService.login(req.body);
+    reply.send({ success: true, data });
+  }
 
-  create = async (req: FastifyRequest, reply: FastifyReply) =>
-    reply.send(await UserService.create(req.body));
+  async addMoney(req: FastifyRequest, reply: FastifyReply) {
+    const { first_name, last_name, amount, description } = req.body as any;
+    const data = await UserService.addMoney(
+      first_name,
+      last_name,
+      amount,
+      description
+    );
+    reply.send({ success: true, data });
+  }
 
-  addMoneyByName = async (req: FastifyRequest, reply: FastifyReply) =>
-    reply.send(await UserService.addMoneyByName(
-      (req.body as any).first_name,
-      (req.body as any).last_name,
-      (req.body as any).add_amount
-    ));
+  async addExpense(req: FastifyRequest, reply: FastifyReply) {
+    const { id } = req.params as any;
+    const { amount, category, description } = req.body as any;
 
-  addExpense = async (req: FastifyRequest, reply: FastifyReply) =>
-    reply.send(await UserService.addExpense(
-      Number((req.params as any).id),
-      (req.body as any).expense,
-      (req.body as any).category,
-      (req.body as any).description
-    ));
+    const data = await UserService.addExpense(
+      Number(id),
+      amount,
+      category,
+      description
+    );
+    reply.send({ success: true, data });
+  }
 
-  getUsers = async (_: any, reply: FastifyReply) =>
-    reply.send(await UserService.getAllUsers());
-
-  quickStats = async (_: any, reply: FastifyReply) =>
-    reply.send(await UserService.quickStats());
-
-  delete = async (req: any, reply: any) =>
-    reply.send(await UserService.delete(Number(req.params.id)));
+  async quickStats(_: FastifyRequest, reply: FastifyReply) {
+    const data = await UserService.quickStats();
+    reply.send({ success: true, data });
+  }
 }
 
 export default new UserController();

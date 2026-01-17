@@ -16,5 +16,6 @@ const start = async () => {
     await config_1.default.authenticate();
     await config_1.default.sync({ alter: true });
     await app.listen({ port: 3000, host: "0.0.0.0" });
+    console.log("🚀 Server running on http://localhost:3000");
 };
 start();
