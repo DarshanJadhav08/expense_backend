@@ -5,13 +5,20 @@ import PDFDocument from "pdfkit";
 class UserController {
 
   async register(req: FastifyRequest, reply: FastifyReply) {
-    try {
-      const data = await UserService.register(req.body);
-      return reply.send({ success: true, data });
-    } catch (e: any) {
-      return reply.status(400).send({ success: false, message: e.message });
-    }
+  try {
+    console.log("HEADERS 👉", req.headers);
+    console.log("BODY 👉", req.body); // 🔥 MUST SEE THIS
+
+    const data = await UserService.register(req.body);
+    return reply.send({ success: true, data });
+  } catch (e: any) {
+    return reply.status(400).send({
+      success: false,
+      message: e.message,
+    });
   }
+}
+
 
   async login(req: FastifyRequest, reply: FastifyReply) {
     try {

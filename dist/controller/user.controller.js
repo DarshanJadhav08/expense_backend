@@ -8,11 +8,16 @@ const pdfkit_1 = __importDefault(require("pdfkit"));
 class UserController {
     async register(req, reply) {
         try {
+            console.log("HEADERS 👉", req.headers);
+            console.log("BODY 👉", req.body); // 🔥 MUST SEE THIS
             const data = await User_service_1.default.register(req.body);
             return reply.send({ success: true, data });
         }
         catch (e) {
-            return reply.status(400).send({ success: false, message: e.message });
+            return reply.status(400).send({
+                success: false,
+                message: e.message,
+            });
         }
     }
     async login(req, reply) {
