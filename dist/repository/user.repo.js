@@ -14,7 +14,10 @@ class UserRepo {
     }
     findByName(first, last) {
         return user_model_1.default.findOne({
-            where: { First_Name: first, Last_Name: last },
+            where: {
+                first_name: first,
+                last_name: last
+            },
         });
     }
     update(id, data) {
@@ -26,16 +29,16 @@ class UserRepo {
     async quickStats() {
         const totals = await user_model_1.default.findOne({
             attributes: [
-                [(0, sequelize_1.fn)("SUM", (0, sequelize_1.col)("Total_Amount")), "total"],
-                [(0, sequelize_1.fn)("SUM", (0, sequelize_1.col)("Spent_Amount")), "spent"],
-                [(0, sequelize_1.fn)("SUM", (0, sequelize_1.col)("Remaining_Amount")), "remaining"],
+                [(0, sequelize_1.fn)("SUM", (0, sequelize_1.col)("total_amount")), "total"],
+                [(0, sequelize_1.fn)("SUM", (0, sequelize_1.col)("expense_amount")), "spent"],
+                [(0, sequelize_1.fn)("SUM", (0, sequelize_1.col)("remaining_amount")), "remaining"],
             ],
             raw: true,
         });
         return {
-            total: Number(totals.total || 0),
-            spent: Number(totals.spent || 0),
-            remaining: Number(totals.remaining || 0),
+            total: Number(totals?.total || 0),
+            spent: Number(totals?.spent || 0),
+            remaining: Number(totals?.remaining || 0),
         };
     }
 }
