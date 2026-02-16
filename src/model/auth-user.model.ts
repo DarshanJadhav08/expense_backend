@@ -31,7 +31,7 @@ AuthUser.init(
   {
     sequelize,
     tableName: "auth_users",
-    timestamps: true,
+    timestamps: false,
   }
 );
 

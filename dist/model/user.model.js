@@ -10,7 +10,6 @@ class UserExpense extends sequelize_1.Model {
 UserExpense.init({
     id: {
         type: sequelize_1.DataTypes.INTEGER,
-        autoIncrement: true,
         primaryKey: true,
     },
     First_Name: {
@@ -55,6 +54,6 @@ UserExpense.init({
 }, {
     sequelize: config_1.default,
     tableName: "expense",
-    timestamps: true,
+    timestamps: false,
 });
 exports.default = UserExpense;

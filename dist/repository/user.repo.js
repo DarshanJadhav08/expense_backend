@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const user_model_1 = __importDefault(require("../model/user.model"));
 const sequelize_1 = require("sequelize");
 class UserRepo {
-    create(data) {
-        return user_model_1.default.create(data);
+    create(data, options) {
+        return user_model_1.default.create(data, options);
     }
     findById(id) {
         return user_model_1.default.findByPk(id);

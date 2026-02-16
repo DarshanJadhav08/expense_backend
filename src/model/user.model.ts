@@ -19,7 +19,6 @@ UserExpense.init(
   {
     id: {
       type: DataTypes.INTEGER,
-      autoIncrement: true,
       primaryKey: true,
     },
     First_Name: {
@@ -65,7 +64,7 @@ UserExpense.init(
   {
     sequelize,
     tableName: "expense",
-    timestamps: true,
+    timestamps: false,
   }
 );
 

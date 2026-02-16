@@ -28,6 +28,6 @@ AuthUser.init({
 }, {
     sequelize: config_1.default,
     tableName: "auth_users",
-    timestamps: true,
+    timestamps: false,
 });
 exports.default = AuthUser;

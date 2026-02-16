@@ -14,7 +14,7 @@ app.register(cors_1.default, { origin: true });
 app.register(user_route_1.default);
 const start = async () => {
     await config_1.default.authenticate();
-    await config_1.default.sync({ alter: true });
+    await config_1.default.sync();
     await app.listen({ port: 3000, host: "0.0.0.0" });
     console.log("🚀 Server running on http://localhost:3000");
 };

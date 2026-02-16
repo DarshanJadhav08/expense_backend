@@ -1,15 +1,14 @@
 import bcrypt from "bcryptjs";
 import AuthUserRepo from "../repository/auth-user.repo";
 import UserRepo from "../repository/user.repo";
+import sequelize from "../db/config";
 
 class UserService {
 
-  // ===============================
-  // REGISTER
-  // ===============================
   async register(data: any) {
     const { first_name, last_name, password, Total_Amount } = data;
 
+    // ✅ 1. VALIDATION FIRST
     if (!first_name || !last_name || !password) {
       throw new Error("first_name, last_name and password are required");
     }
@@ -19,29 +18,54 @@ class UserService {
       throw new Error("User already registered");
     }
 
-    const hash = await bcrypt.hash(password, 10);
+    // ✅ 2. START TRANSACTION
+    const t = await sequelize.transaction();
 
-    const authUser = await AuthUserRepo.create({
-      first_name,
-      last_name,
-      password: hash,
-    });
+    try {
+      const hash = await bcrypt.hash(password, 10);
 
-    await UserRepo.create({
-      id: authUser.id, // SAME ID
-      First_Name: first_name,
-      Last_Name: last_name,
-      Total_Amount: Total_Amount || 0,
-      Spent_Amount: 0,
-      Remaining_Amount: Total_Amount || 0,
-      Category: "N/A",
-      Description: "Account created",
-      Date: new Date().toISOString().split("T")[0],
-      Month: new Date().toLocaleString("default", { month: "long" }),
-      Year: new Date().getFullYear().toString(),
-    });
+      // ✅ 3. AUTH TABLE
+      const authUser = await AuthUserRepo.create(
+        {
+          first_name,
+          last_name,
+          password: hash,
+        },
+        { transaction: t }
+      );
 
-    return { id: authUser.id, first_name, last_name };
+      // ✅ 4. EXPENSE TABLE
+      await UserRepo.create(
+        {
+          id: authUser.id,
+          First_Name: first_name,
+          Last_Name: last_name,
+          Total_Amount: Total_Amount || 0,
+          Spent_Amount: 0,
+          Remaining_Amount: Total_Amount || 0,
+          Category: "N/A",
+          Description: "Account created",
+          Date: new Date().toISOString().split("T")[0],
+          Month: new Date().toLocaleString("default", { month: "long" }),
+          Year: new Date().getFullYear().toString(),
+        },
+        { transaction: t }
+      );
+
+      // ✅ 5. COMMIT ONLY IF EVERYTHING OK
+      await t.commit();
+
+      return {
+        id: authUser.id,
+        first_name,
+        last_name,
+      };
+
+    } catch (err) {
+      // ❌ 6. ROLLBACK ON ERROR
+      await t.rollback();
+      throw err;
+    }
   }
 
   // ===============================

@@ -6,12 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const auth_user_repo_1 = __importDefault(require("../repository/auth-user.repo"));
 const user_repo_1 = __importDefault(require("../repository/user.repo"));
+const config_1 = __importDefault(require("../db/config"));
 class UserService {
-    // ===============================
-    // REGISTER
-    // ===============================
     async register(data) {
         const { first_name, last_name, password, Total_Amount } = data;
+        // ✅ 1. VALIDATION FIRST
         if (!first_name || !last_name || !password) {
             throw new Error("first_name, last_name and password are required");
         }
@@ -19,26 +18,43 @@ class UserService {
         if (exists) {
             throw new Error("User already registered");
         }
-        const hash = await bcryptjs_1.default.hash(password, 10);
-        const authUser = await auth_user_repo_1.default.create({
-            first_name,
-            last_name,
-            password: hash,
-        });
-        await user_repo_1.default.create({
-            id: authUser.id, // SAME ID
-            First_Name: first_name,
-            Last_Name: last_name,
-            Total_Amount: Total_Amount || 0,
-            Spent_Amount: 0,
-            Remaining_Amount: Total_Amount || 0,
-            Category: "N/A",
-            Description: "Account created",
-            Date: new Date().toISOString().split("T")[0],
-            Month: new Date().toLocaleString("default", { month: "long" }),
-            Year: new Date().getFullYear().toString(),
-        });
-        return { id: authUser.id, first_name, last_name };
+        // ✅ 2. START TRANSACTION
+        const t = await config_1.default.transaction();
+        try {
+            const hash = await bcryptjs_1.default.hash(password, 10);
+            // ✅ 3. AUTH TABLE
+            const authUser = await auth_user_repo_1.default.create({
+                first_name,
+                last_name,
+                password: hash,
+            }, { transaction: t });
+            // ✅ 4. EXPENSE TABLE
+            await user_repo_1.default.create({
+                id: authUser.id,
+                First_Name: first_name,
+                Last_Name: last_name,
+                Total_Amount: Total_Amount || 0,
+                Spent_Amount: 0,
+                Remaining_Amount: Total_Amount || 0,
+                Category: "N/A",
+                Description: "Account created",
+                Date: new Date().toISOString().split("T")[0],
+                Month: new Date().toLocaleString("default", { month: "long" }),
+                Year: new Date().getFullYear().toString(),
+            }, { transaction: t });
+            // ✅ 5. COMMIT ONLY IF EVERYTHING OK
+            await t.commit();
+            return {
+                id: authUser.id,
+                first_name,
+                last_name,
+            };
+        }
+        catch (err) {
+            // ❌ 6. ROLLBACK ON ERROR
+            await t.rollback();
+            throw err;
+        }
     }
     // ===============================
     // LOGIN

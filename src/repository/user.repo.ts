@@ -2,8 +2,8 @@ import UserExpense from "../model/user.model";
 import { fn, col } from "sequelize";
 
 class UserRepo {
-  create(data: any) {
-    return UserExpense.create(data);
+  create(data: any, options?: any) {
+    return UserExpense.create(data, options);
   }
 
   findById(id: number) {
