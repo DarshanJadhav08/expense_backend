@@ -12,44 +12,36 @@ UserExpense.init({
         type: sequelize_1.DataTypes.INTEGER,
         primaryKey: true,
     },
-    First_Name: {
+    first_name: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
-    Last_Name: {
+    last_name: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
-    Total_Amount: {
+    total_amount: {
         type: sequelize_1.DataTypes.INTEGER,
         defaultValue: 0,
     },
-    Spent_Amount: {
+    expense_amount: {
         type: sequelize_1.DataTypes.INTEGER,
         defaultValue: 0,
     },
-    Remaining_Amount: {
+    remaining_amount: {
         type: sequelize_1.DataTypes.INTEGER,
         defaultValue: 0,
     },
-    Category: {
+    category: {
         type: sequelize_1.DataTypes.STRING,
         defaultValue: "N/A",
     },
-    Description: {
+    description: {
         type: sequelize_1.DataTypes.STRING,
     },
-    Date: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    Month: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
-    },
-    Year: {
-        type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
+    created_at: {
+        type: sequelize_1.DataTypes.DATE,
+        defaultValue: sequelize_1.DataTypes.NOW,
     },
 }, {
     sequelize: config_1.default,

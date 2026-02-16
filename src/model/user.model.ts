@@ -3,16 +3,14 @@ import sequelize from "../db/config";
 
 class UserExpense extends Model {
   declare id: number;
-  declare First_Name: string;
-  declare Last_Name: string;
-  declare Total_Amount: number;
-  declare Spent_Amount: number;
-  declare Remaining_Amount: number;
-  declare Category: string;
-  declare Description: string;
-  declare Date: string;
-  declare Month: string;
-  declare Year: string;
+  declare first_name: string;
+  declare last_name: string;
+  declare total_amount: number;
+  declare expense_amount: number;
+  declare remaining_amount: number;
+  declare category: string;
+  declare description: string;
+  declare created_at: Date;
 }
 
 UserExpense.init(
@@ -21,44 +19,36 @@ UserExpense.init(
       type: DataTypes.INTEGER,
       primaryKey: true,
     },
-    First_Name: {
+    first_name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    Last_Name: {
+    last_name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    Total_Amount: {
+    total_amount: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    Spent_Amount: {
+    expense_amount: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    Remaining_Amount: {
+    remaining_amount: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    Category: {
+    category: {
       type: DataTypes.STRING,
       defaultValue: "N/A",
     },
-    Description: {
+    description: {
       type: DataTypes.STRING,
     },
-    Date: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    Month: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    Year: {
-      type: DataTypes.STRING,
-      allowNull: false,
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
