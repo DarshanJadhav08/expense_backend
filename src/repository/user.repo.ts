@@ -24,6 +24,27 @@ class UserRepo {
     return UserExpense.update(data, { where: { id } });
   }
 
+  async incrementAmounts(id: number, data: any) {
+    const { total_amount, expense_amount, remaining_amount, category, description } = data;
+    const updates: any = {};
+    
+    if (category) updates.category = category;
+    if (description) updates.description = description;
+    
+    if (Object.keys(updates).length > 0) {
+      await UserExpense.update(updates, { where: { id } });
+    }
+    
+    const increments: any = {};
+    if (total_amount) increments.total_amount = total_amount;
+    if (expense_amount) increments.expense_amount = expense_amount;
+    if (remaining_amount) increments.remaining_amount = remaining_amount;
+    
+    if (Object.keys(increments).length > 0) {
+      await UserExpense.increment(increments, { where: { id } });
+    }
+  }
+
   getAll() {
     return UserExpense.findAll();
   }

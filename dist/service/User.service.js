@@ -81,14 +81,13 @@ class UserService {
         const record = await user_repo_1.default.findByName(first, last);
         if (!record)
             throw new Error("Expense record not found");
-        const total = record.total_amount + amount;
-        const remaining = record.remaining_amount + amount;
-        await user_repo_1.default.update(record.id, {
-            total_amount: total,
-            remaining_amount: remaining,
+        await user_repo_1.default.incrementAmounts(record.id, {
+            total_amount: amount,
+            remaining_amount: amount,
             description: description,
         });
-        return { total, remaining };
+        const updated = await user_repo_1.default.findById(record.id);
+        return { total: updated.total_amount, remaining: updated.remaining_amount };
     }
     // ===============================
     // ADD EXPENSE
@@ -97,17 +96,16 @@ class UserService {
         const record = await user_repo_1.default.findById(id);
         if (!record)
             throw new Error("Expense record not found");
-        const spent = record.expense_amount + amount;
-        const remaining = record.total_amount - spent;
-        if (remaining < 0)
+        if (record.remaining_amount < amount)
             throw new Error("Insufficient balance");
-        await user_repo_1.default.update(id, {
-            expense_amount: spent,
-            remaining_amount: remaining,
+        await user_repo_1.default.incrementAmounts(id, {
+            expense_amount: amount,
+            remaining_amount: -amount,
             category: category,
             description: description,
         });
-        return { spent, remaining };
+        const updated = await user_repo_1.default.findById(id);
+        return { spent: updated.expense_amount, remaining: updated.remaining_amount };
     }
     // ===============================
     // QUICK STATS
